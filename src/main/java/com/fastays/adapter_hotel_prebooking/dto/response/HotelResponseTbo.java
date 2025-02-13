@@ -20,6 +20,9 @@ public class HotelResponseTbo {
     @JsonProperty("ValidationInfo")
     private ValidationInfoDTO validationInfo;
 
+    public void setResponse(String result) {
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
