@@ -4,5 +4,5 @@ import com.fastays.adapter_hotel_prebooking.dto.request.HotelRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface HotelPrebookingService {
-    ResponseEntity<String> checkPrebooking(HotelRequest hotelRequest);
+    ResponseEntity<?> bookHotel(HotelRequest hotelRequest);
 }

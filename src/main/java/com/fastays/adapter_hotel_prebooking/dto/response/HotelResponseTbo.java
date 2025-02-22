@@ -14,20 +14,17 @@ import java.util.List;
 @ToString
 public class HotelResponseTbo {
     @JsonProperty("Status")
-    private StatusDTO status;
+    private Status status;
     @JsonProperty("HotelResult")
-    private List<HotelResultDTO> hotelResult;
+    private List<HotelResult> hotelResult;
     @JsonProperty("ValidationInfo")
-    private ValidationInfoDTO validationInfo;
-
-    public void setResponse(String result) {
-    }
+    private ValidationInfo validationInfo;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class StatusDTO {
+    public static class Status {
         @JsonProperty("Code")
         private int code;
         @JsonProperty("Description")
@@ -38,22 +35,24 @@ public class HotelResponseTbo {
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class HotelResultDTO {
+    public static class HotelResult {
         @JsonProperty("HotelCode")
         private String hotelCode;
         @JsonProperty("Currency")
         private String currency;
         @JsonProperty("Rooms")
-        private List<RoomDTO> rooms;
+        private List<Room> rooms;
         @JsonProperty("RateConditions")
         private List<String> rateConditions;
+
+
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class RoomDTO {
+    public static class Room {
         @JsonProperty("Name")
         private List<String> name;
         @JsonProperty("BookingCode")
@@ -61,7 +60,7 @@ public class HotelResponseTbo {
         @JsonProperty("Inclusion")
         private String inclusion;
         @JsonProperty("DayRates")
-        private List<List<DayRateDTO>> dayRates;
+        private List<List<DayRate>> dayRates;
         @JsonProperty("TotalFare")
         private double totalFare;
         @JsonProperty("TotalTax")
@@ -69,14 +68,59 @@ public class HotelResponseTbo {
         @JsonProperty("RoomPromotion")
         private List<String> roomPromotion;
         @JsonProperty("CancelPolicies")
-        private List<CancelPolicyDTO> cancelPolicies;
+        private List<CancelPolicy> cancelPolicies;
+        @JsonProperty("MealType")
+        private String mealType;
+        @JsonProperty("IsRefundable")
+        private boolean isRefundable;
+        @JsonProperty("Supplements")
+        private List<List<Supplement>> supplements;
+        @JsonProperty("WithTransfers")
+        private boolean withTransfers;
+        @JsonProperty("Amenities")
+        private List<String> amenities;
+        @JsonProperty("LastCancellationDeadline")
+        private String lastCancellationDeadline;
+        @JsonProperty("PriceBreakUp")
+        private List<PriceBreakUp> priceBreakUps;
+
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class DayRateDTO {
+    public static class PriceBreakUp {
+        @JsonProperty("RoomRate")
+        private double roomRate;
+        @JsonProperty("RoomTax")
+        private double roomTax;
+        @JsonProperty("AgentCommission")
+        private double agentCommission;
+        @JsonProperty("TaxBreakup")
+        private List<TaxBreakup> taxBreakup;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @ToString
+    public static class TaxBreakup {
+        @JsonProperty("TaxType")
+        private String taxType;
+        @JsonProperty("TaxableAmount")
+        private double taxableAmount;
+        @JsonProperty("TaxPercentage")
+        private double taxPercentage;
+        @JsonProperty("TaxAmount")
+        private double taxAmount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @ToString
+    public static class DayRate {
         @JsonProperty("BasePrice")
         private double basePrice;
     }
@@ -85,7 +129,7 @@ public class HotelResponseTbo {
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class CancelPolicyDTO {
+    public static class CancelPolicy {
         @JsonProperty("Index")
         private String index;
         @JsonProperty("FromDate")
@@ -93,17 +137,59 @@ public class HotelResponseTbo {
         @JsonProperty("ChargeType")
         private String chargeType;
         @JsonProperty("CancellationCharge")
-        private int cancellationCharge;
+        private double cancellationCharge;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @ToString
-    public static class ValidationInfoDTO {
+    public static class Supplement {
+        @JsonProperty("Index")
+        private int index;
+        @JsonProperty("Type")
+        private String type;
+        @JsonProperty("Description")
+        private String description;
+        @JsonProperty("Price")
+        private double price;
+        @JsonProperty("Currency")
+        private String currency;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @ToString
+    public static class ValidationInfo {
         @JsonProperty("PanMandatory")
         private boolean panMandatory;
         @JsonProperty("PassportMandatory")
         private boolean passportMandatory;
+        @JsonProperty("CorporateBookingAllowed")
+        private boolean corporateBookingAllowed;
+        @JsonProperty("PanCountRequired")
+        private int panCountRequired;
+        @JsonProperty("SamePaxNameAllowed")
+        private boolean samePaxNameAllowed;
+        @JsonProperty("SpaceAllowed;")
+        private boolean spaceAllowed;
+        @JsonProperty("SpecialCharAllowed")
+        private boolean specialCharAllowed;
+        @JsonProperty("PaxNameMinLength")
+        private int paxNameMinLength;
+        @JsonProperty("PaxNameMaxLength")
+        private int paxNameMaxLength;
+        @JsonProperty("CharLimit")
+        private boolean charLimit;
+        @JsonProperty("PackageFare")
+        private boolean packageFare;
+        @JsonProperty("PackageDetailsMandatory")
+        private boolean packageDetailsMandatory;
+        @JsonProperty("DepartureDetailsMandatory")
+        private boolean departureDetailsMandatory;
+        @JsonProperty(" GstAllowed")
+        private boolean gstAllowed;
     }
+
 }

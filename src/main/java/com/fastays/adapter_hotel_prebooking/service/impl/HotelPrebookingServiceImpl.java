@@ -1,90 +1,113 @@
 package com.fastays.adapter_hotel_prebooking.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fastays.adapter_hotel_prebooking.dto.request.HotelRequest;
+import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingMngo;
+import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingResponseMngo;
 import com.fastays.adapter_hotel_prebooking.dto.response.HotelResponseTbo;
+import com.fastays.adapter_hotel_prebooking.repository.MongoDbRepository;
 import com.fastays.adapter_hotel_prebooking.service.interfaces.HotelPrebookingService;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HotelPrebookingServiceImpl implements HotelPrebookingService {
 
-    private static final Logger logger = LoggerFactory.getLogger(HotelPrebookingServiceImpl.class);
-
-    @Value("${tektravels.api.url}")
+    @Value("${tbo.api.url}")
     private String apiUrl;
 
-    @Value("${tektravels.api.username}")
+    @Value("${tbo.api.username}")
     private String apiUserName;
 
-    @Value("${tektravels.api.secret}")
+    @Value("${tbo.api.secret}")
     private String apiSecret;
 
     private final RestTemplate restTemplate;
-    private final Configuration freemarkerConfig;
-    private final ObjectMapper objectMapper; // Used for JSON parsing
+    private final Configuration freemarkerConfiguration;
+    private final MongoDbRepository mongoDbRepository;
 
     @Override
-    public ResponseEntity<String> checkPrebooking(HotelRequest hotelRequest) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(apiUserName, apiSecret);
-        HttpEntity<HotelRequest> entity = new HttpEntity<>(hotelRequest, headers);
-
+    public ResponseEntity<?> bookHotel(HotelRequest hotelRequest) {
         try {
-            ResponseEntity<HotelResponseTbo> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, HotelResponseTbo.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBasicAuth(apiUserName, apiSecret);
+            HttpEntity<HotelRequest> requestEntity = new HttpEntity<>(hotelRequest, headers);
 
+            // Corrected URL
+            ResponseEntity<HotelResponseTbo> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, HotelResponseTbo.class);
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 HotelResponseTbo hotelResponseTbo = response.getBody();
+                HotelBookingResponseMngo fetchedHotels = null;
+                if (hotelResponseTbo.getHotelResult() != null) {
+                    fetchedHotels = fetchHotelUsingBookingCode(hotelResponseTbo);
+                }
+                String mappedFTL = maptoFtl(hotelResponseTbo, fetchedHotels);
+                return ResponseEntity.ok(mappedFTL);
 
-                // Prepare the data model for FreeMarker
-                Map<String, Object> model = new HashMap<>();
-                model.put("status", hotelResponseTbo.getStatus());
-                model.put("hotelResult", hotelResponseTbo.getHotelResult());
-                model.put("validationInfo", hotelResponseTbo.getValidationInfo());
-
-                // Load and process FreeMarker template
-                Template template = freemarkerConfig.getTemplate("hotel_response.ftl");
-                String jsonResponse = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
-
-                // Convert the FreeMarker string output into a properly formatted JSON response
-                String formattedJson = objectMapper.readTree(jsonResponse).toPrettyString();
-
-                // Return JSON response with correct content type
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(formattedJson);
+            } else {
+                log.error("Failed to book hotel. Status: {}", response.getStatusCode());
+                return ResponseEntity.status(response.getStatusCode()).body("Booking failed: " + response.getStatusCode().toString());
             }
-        } catch (IOException | TemplateException e) {
-            logger.error("Error processing FreeMarker template", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"error\": \"Template processing failed\"}");
+
         } catch (Exception e) {
-            logger.error("Error fetching hotel prebooking details", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"error\": \"Unexpected error occurred\"}");
+            log.error("Error during hotel booking: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing hotel booking: " + e.getMessage());
+        }
+    }
+
+    public HotelBookingResponseMngo fetchHotelUsingBookingCode(HotelResponseTbo hotelResponseTbo) {
+        HotelBookingResponseMngo hotelBookingResponseMngo = null;
+        String bookingCode = null;
+
+        List<HotelResponseTbo.HotelResult> hotelResults = hotelResponseTbo.getHotelResult();
+        for (HotelResponseTbo.HotelResult rsult : hotelResults) {
+            List<HotelResponseTbo.Room> roomslist = rsult.getRooms();
+            for (HotelResponseTbo.Room room : roomslist) {
+                bookingCode = room.getBookingCode();
+            }
+        }
+        Optional<HotelBookingResponseMngo> result = mongoDbRepository.findByBookingCode(bookingCode);
+        if (result.isPresent()) {
+            hotelBookingResponseMngo = result.get();
+            return hotelBookingResponseMngo;
+        } else {
+            log.info(" Data not present in the MongoDb with provided Booking ID");
+            return null;
         }
 
-        // Return error response if API call fails
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"error\": \"Failed to fetch hotel prebooking details\"}");
     }
+    public String maptoFtl(HotelResponseTbo hotelResponseTbo, HotelBookingResponseMngo hotelBookingResponseMngo) {
+        try {
+            if (hotelResponseTbo.getHotelResult() != null || hotelBookingResponseMngo != null) {
+
+                Map<String, Object> mapped = new HashMap<>();
+
+                mapped.put("resultsTbo", hotelResponseTbo);
+                mapped.put("resultsMngo", hotelBookingResponseMngo);
+                //mapped (both responses are present in the name ogf string)
+
+                Template template = freemarkerConfiguration.getTemplate("hotel_response.ftl");
+                return FreeMarkerTemplateUtils.processTemplateIntoString(template, mapped);
+            } else {
+                log.info("Not Mapping with FTL");
+                return null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 }
+
