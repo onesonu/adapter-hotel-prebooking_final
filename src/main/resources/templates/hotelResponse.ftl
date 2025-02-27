@@ -1,4 +1,3 @@
-<#-- hotel_response.ftl -->
 <#setting number_format= "0.#####################">
 <#setting boolean_format="true,false">
 {
@@ -7,7 +6,7 @@
 "razorPayOrderStatus": "<#if resultsMngo??>${(resultsMngo.razorPayOrderStatus)!null}<#else>null</#if>",
 "razorPayOrderMessage": "<#if resultsMngo??>${(resultsMngo.razorPayOrderMessage)!null}<#else>null</#if>",
 "userId": "<#if resultsMngo??>${(resultsMngo.userId)!null}<#else>null</#if>",
-"user": null, <#-- this varibale nither present in Mngo or TBO -->
+"user": null,
 
 "Status": {
 "Code": "${(resultsTbo.status.code)!200}",
@@ -150,7 +149,6 @@
     "IsPriceChanged": "<#if resultsMngo.bookResult.isPriceChanged??>${resultsMngo.bookResult.priceChanged?c}<#else>false</#if>",
     "IsCancellationPolicyChanged": "<#if resultsMngo.bookResult.isCancellationPolicyChanged??>${resultsMngo.bookResult.cancellationPolicyChanged?c}<#else>false</#if>",
     "FastaysId": "<#if resultsMngo.bookResult.fastaysId??>${resultsMngo.bookResult.fastaysId}<#else>null</#if>"
-
     }
 <#else>
     null

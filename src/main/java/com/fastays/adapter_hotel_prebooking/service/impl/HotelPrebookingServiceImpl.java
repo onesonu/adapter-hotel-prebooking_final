@@ -1,11 +1,14 @@
 package com.fastays.adapter_hotel_prebooking.service.impl;
 
 import com.fastays.adapter_hotel_prebooking.dto.request.HotelRequest;
-import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingMngo;
-import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingResponseMngo;
-import com.fastays.adapter_hotel_prebooking.dto.response.HotelResponseTbo;
+import com.fastays.adapter_hotel_prebooking.dto.response.responeTboClasses.HotelResult;
+import com.fastays.adapter_hotel_prebooking.dto.response.responeTboClasses.Room;
+import com.fastays.adapter_hotel_prebooking.dto.response.responeTboClasses.Status;
+import com.fastays.adapter_hotel_prebooking.dto.response.responseMngoClass.HotelBookingResponseMngo;
+import com.fastays.adapter_hotel_prebooking.dto.response.responeTboClasses.HotelResponseTbo;
 import com.fastays.adapter_hotel_prebooking.repository.MongoDbRepository;
 import com.fastays.adapter_hotel_prebooking.service.interfaces.HotelPrebookingService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import lombok.RequiredArgsConstructor;
@@ -70,10 +73,10 @@ public class HotelPrebookingServiceImpl implements HotelPrebookingService {
         HotelBookingResponseMngo hotelBookingResponseMngo = null;
         String bookingCode = null;
 
-        List<HotelResponseTbo.HotelResult> hotelResults = hotelResponseTbo.getHotelResult();
-        for (HotelResponseTbo.HotelResult rsult : hotelResults) {
-            List<HotelResponseTbo.Room> roomslist = rsult.getRooms();
-            for (HotelResponseTbo.Room room : roomslist) {
+        List<HotelResult> hotelResults = hotelResponseTbo.getHotelResult();
+        for (HotelResult rsult : hotelResults) {
+            List<Room> roomslist = rsult.getRooms();
+            for (Room room : roomslist) {
                 bookingCode = room.getBookingCode();
             }
         }
@@ -87,24 +90,42 @@ public class HotelPrebookingServiceImpl implements HotelPrebookingService {
         }
 
     }
-    public String maptoFtl(HotelResponseTbo hotelResponseTbo, HotelBookingResponseMngo hotelBookingResponseMngo) {
-        try {
-            if (hotelResponseTbo.getHotelResult() != null || hotelBookingResponseMngo != null) {
 
+    public String maptoFtl(HotelResponseTbo hotelResponseTbo, HotelBookingResponseMngo hotelBookingResponseMngo) {
+
+        if (hotelResponseTbo.getHotelResult() != null || hotelBookingResponseMngo != null) {
+            try {
                 Map<String, Object> mapped = new HashMap<>();
 
                 mapped.put("resultsTbo", hotelResponseTbo);
                 mapped.put("resultsMngo", hotelBookingResponseMngo);
                 //mapped (both responses are present in the name ogf string)
 
-                Template template = freemarkerConfiguration.getTemplate("hotel_response.ftl");
+                Template template = freemarkerConfiguration.getTemplate("hotelResponse.ftl");
                 return FreeMarkerTemplateUtils.processTemplateIntoString(template, mapped);
-            } else {
-                log.info("Not Mapping with FTL");
-                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } else if (hotelResponseTbo.getStatus() != null) {
+            Status sts = hotelResponseTbo.getStatus();
+
+            try {
+                Map<String, Object> errorMap = new HashMap<>();
+                errorMap.put("Sting Code", sts.getCode());
+                errorMap.put("Description", sts.getDescription());
+
+                Map<String, Object> statusMap = new HashMap<>();
+                statusMap.put("Status", errorMap); // Fix: store errorMap, not statusMap itself
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(statusMap);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            log.info("Not Mapping TO FTL");
+            return null;
+
         }
 
     }

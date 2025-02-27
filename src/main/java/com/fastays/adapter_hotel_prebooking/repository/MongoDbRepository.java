@@ -1,7 +1,6 @@
 package com.fastays.adapter_hotel_prebooking.repository;
 
-import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingMngo;
-import com.fastays.adapter_hotel_prebooking.dto.response.HotelBookingResponseMngo;
+import com.fastays.adapter_hotel_prebooking.dto.response.responseMngoClass.HotelBookingResponseMngo;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import org.springframework.data.mongodb.repository.Query;
